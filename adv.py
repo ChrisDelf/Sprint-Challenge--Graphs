@@ -15,7 +15,7 @@ world = World()
 # map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
 map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+#map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -29,11 +29,21 @@ player = Player(world.starting_room)
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
 traversal_path = []
-print(room_graph[0])
 
+# print( "Room 8", room_graph[8][1].keys())
+# print( "Room 9", room_graph[9][1].keys())  #interesting mystery on why 8 is not connected to 9 but 9 is connected to 8
+# print( "Graph", room_graph)
 ### helper
-def get_directions(room_id):
+# def pretty(d, indent=0):
+#    for key, value in d.items():
+#       print('\t' * indent + str(key))
+#       if isinstance(value, dict):
+#           print(value)
+#       else:
+#          print('\t' * (indent+1) + str(value))
 
+def get_directions(room_id):
+    # print("I'm running", room_graph[room_id][1].keys())
     valid_directions={}
     if 'n' in room_graph[room_id][1].keys():
         valid_directions['n'] = '?'
@@ -49,6 +59,8 @@ def get_directions(room_id):
 
     # shuffle(valid_directions)
     # print(valid_directions)
+    # if room_id == 9:
+    #     print("HELLO", valid_directions)
     return valid_directions
 
 
@@ -72,50 +84,98 @@ def get_directions(room_id):
 #     #             print(visited[room_id])
 #     #         print(visited[room_id][1].keys())
 
-def dft_adv(starting_room):
+def big_loop(starting_room):
     #Create an empty stack and push starting vertex Id
 
 
     room_id = (starting_room)
 
     # Create a Set to store visited vertices
-    visited = { 0 : get_directions(0)}
+    visited = { starting_room : get_directions(starting_room)}
     opposites = { 'w': 'e', 's': 'n', 'n': 's', 'e': 'w'}
-    room_options = len(room_graph[0][1].keys())
-    move = []
+    room_options = len(room_graph[starting_room][1].keys())
+    moves = []
     track_rooms = []
-    while room_options > 1:
+    current_room = starting_room
+    while len(visited) < 17:
+        while '?' in visited[current_room].values():
 
 
+            # random_exit = random.randrange(0,4)
+            # directions_list = [ 'n','s','e','w']
+            player_room_directions = visited[current_room]
+            array_possible_exits = []
+            index = 0
 
-        random_exit = random.randrange(0,4)
-        directions_list = [ 'n','s','e','w']
-        player_room_directions = get_directions(room_id)
-        movement = directions_list[random_exit]
-        print("movement", movement)
-        if player.travel(directions_list[random_exit]) is not None:
-            #adding the found path to the current room
-            next_room_id = player.current_room.id
-            print("id", room_id, "movement", movement)
-            visited[room_id][movement] = next_room_id
-            #grabing the new room from the world
-            new_room = get_directions(next_room_id)
-            print("new Room", new_room)
-            visited[next_room_id] = new_room
-            visited[next_room_id][opposites[movement]] = room_id
-            print("visited", visited)
-            #gotta add the reverse
+            for e in list(player_room_directions.values()):
+                if e == '?':
 
-            move.append(movement)
-            room_id = player.current_room.id
-            room_options = len(player_room_directions)
+                    array_possible_exits.append(list(player_room_directions.keys())[index])
+                    # print("ARRAY OF P", array_possible_exits)
+                index += 1
+            if len(array_possible_exits) == 0:
+                print("dead end")
+                break
 
+            next_direction = array_possible_exits[random.randrange(len(array_possible_exits))]
+            # print("Next directions", next_direction)
+            # print("dir array", array_possible_exits)
+            next_room = room_graph[current_room][1][next_direction]
+            # print("next_room", next_room)
+            moves.append(next_direction)
+            visited[current_room][next_direction] = next_room
+            visited[next_room] = get_directions(next_room)
+            visited[next_room][opposites[next_direction]] = current_room
+            # print("Current Room", current_room)
+            # world.print_rooms()
+            # pretty(visited)
+            # input("--------------------------------------------")
 
-    print("dead end time")
-    print("roomid", visited)
-    return move
-move = dft_adv(player.current_room.id)
+            current_room = next_room
+       # Create an empty queue and enqueue a PATH TO the starting vertex ID
+            # Create a Set to store visited vertices
+            # While the queue is not empty...
+                     #Dequeue the first PATH
+                #Grab the last vertex from the PATH
+                #If that vertex has not been visited...
+                    #CHECK IF IT'S THE TARGET
+                        #IF SO, RETURN PATH
+                    #Mark it as visited..
+                    #Then add a PATH TO its neighbors to the back of the queue
+                        #COPY THE PATH
+                        #APPEND THE NEIGHBOR TO THE BACK
+        # print("dead end time")
+        # print("Current Room@#$@$@#$@#$@#$23", current_room)
+        # print("roomid", visited)
+        while len(visited) < 17 and '?' not in visited[current_room].values():
+            breakpoint()
+            queue = Queue()
+            player_room_directions = visited[current_room]
+            v = set()
+            for key, value in player_room_directions.items():
+                queue.enqueue([value,[key]])
+            while queue.size() > 0:
+                this_one = queue.dequeue()
+                room = this_one[0]
+                if room not in v:
+                    # print("visited_rooms", visited[room].values())
+                    if '?' in visited[room].values():
+                        # breakpoint()
+                        current_room = room
+                        moves += this_one[1]
+                        break
+                v.add(room)
+                player_room_directions = visited[room]
+                for key, value in player_room_directions.items():
+                    path_copy = this_one[1].copy()
+                    path_copy.append(key)
+                    queue.enqueue([value, path_copy])
+    print(len(moves))
+    return moves
 
+move = big_loop(player.current_room.id)
+
+# print("move array", move)
 traversal_path = move
 # TRAVERSAL TEST
 visited_rooms = set()
@@ -137,12 +197,12 @@ else:
 #######
 # UNCOMMENT TO WALK AROUND
 #######
-player.current_room.print_room_description(player)
-while True:
-    cmds = input("-> ").lower().split(" ")
-    if cmds[0] in ["n", "s", "e", "w"]:
-        player.travel(cmds[0], True)
-    elif cmds[0] == "q":
-        break
-    else:
-        print("I did not understand that command.")
+# player.current_room.print_room_description(player)
+# while True:
+#     cmds = input("-> ").lower().split(" ")
+#     if cmds[0] in ["n", "s", "e", "w"]:
+#         player.travel(cmds[0], True)
+#     elif cmds[0] == "q":
+#         break
+#     else:
+#         print("I did not understand that command.")
