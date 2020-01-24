@@ -48,7 +48,7 @@ def get_directions(room_id):
         valid_directions['w'] = '?'
 
     # shuffle(valid_directions)
-    print(valid_directions)
+    # print(valid_directions)
     return valid_directions
 
 
@@ -74,12 +74,13 @@ def get_directions(room_id):
 
 def dft_adv(starting_room):
     #Create an empty stack and push starting vertex Id
-    stack = Stack()
+
 
     room_id = (starting_room)
-    print("roomid", room_id)
+
     # Create a Set to store visited vertices
-    visited = {}
+    visited = { 0 : get_directions(0)}
+    opposites = { 'w': 'e', 's': 'n', 'n': 's', 'e': 'w'}
     room_options = len(room_graph[0][1].keys())
     move = []
     track_rooms = []
@@ -88,32 +89,30 @@ def dft_adv(starting_room):
 
 
         random_exit = random.randrange(0,4)
-        print(random_exit)
         directions_list = [ 'n','s','e','w']
         player_room_directions = get_directions(room_id)
         movement = directions_list[random_exit]
-        player.travel(directions_list[random_exit])
-        move.append(movement)
-        #getting new room id
-        # path_copy = path.copy
-        # path_copy.append(room_id)
-        # track_rooms = path_copy
-        room_id = player.current_room.id
-        print("player", movement)
-        print("player_room_directions", player_room_directions)
-        print("player_room_id", room_id)
-        print("movement array", move)
-        room_options = len(player_room_directions)
-        # room_id = path[-1]
-        # if room_id not in visited:
-        #
-        #     visited[room_id] = {}
-        #     print(visited)
-        #     for direction in get_directions(room_id):
-        #         visited[room_id].add(direction)
-        #         # visited[room_id][] = '?'
-        #         print(visited[room_id])
-        #
+        print("movement", movement)
+        if player.travel(directions_list[random_exit]) is not None:
+            #adding the found path to the current room
+            next_room_id = player.current_room.id
+            print("id", room_id, "movement", movement)
+            visited[room_id][movement] = next_room_id
+            #grabing the new room from the world
+            new_room = get_directions(next_room_id)
+            print("new Room", new_room)
+            visited[next_room_id] = new_room
+            visited[next_room_id][opposites[movement]] = room_id
+            print("visited", visited)
+            #gotta add the reverse
+
+            move.append(movement)
+            room_id = player.current_room.id
+            room_options = len(player_room_directions)
+
+
+    print("dead end time")
+    print("roomid", visited)
     return move
 move = dft_adv(player.current_room.id)
 
