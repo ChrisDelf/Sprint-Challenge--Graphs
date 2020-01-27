@@ -7,5 +7,6 @@ class Player:
             self.current_room = next_room
             if (show_rooms):
                 next_room.print_room_description(self)
+            return 'success'
         else:
             print("You cannot move in that direction.")
